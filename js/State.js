@@ -20,8 +20,8 @@ State.DEFAULT = {
     edit:     true,
     grid:     true,
     label:   false,
-    next:  "white",
-    type:       "",
+    next:  "white",  // color of the active player
+    type:       "",  // type of game as list of optional bugs (l, m or p)
 };
 
 State.DEFAULT.size =
@@ -81,9 +81,11 @@ State.url = function () {
     var l = window.location;
     var q = [];
     $.each(State.DEFAULT, function (index, _value) {
-	if (State.DEFAULT[index] == State.Current[index]) return;
+	if (State.DEFAULT[index] == State.Current[index])
+            return;
 	var v = State.Current[index];
-	if (typeof State.DEFAULT[index] == "boolean") v = v ? 1 : 0;
+	if (typeof State.DEFAULT[index] == "boolean")
+            v = v ? 1 : 0;
 	q.push(index + "=" + v);
     });
     return(l.origin + l.pathname + "?" + q.join("&"));

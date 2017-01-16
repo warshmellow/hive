@@ -32,6 +32,22 @@ function boolean_text (is_true) {
 }
 
 /*
+ * return the menu for a boolean value
+ */
+
+function boolean_menu (text, value) {
+    return(text + ": " + boolean_text(value) + " &rarr; " + boolean_text(!value));
+}
+
+/*
+ * return the menu for a color value
+ */
+
+function color_menu (text, value) {
+    return(text + ": " + value + " &rarr; " + other_color(value));
+}
+
+/*
  * update a menu item text
  */
 
@@ -53,26 +69,21 @@ function update_menu (option) {
         option.text("Increase size");
     } else if (text == "pass") {
         option.text("Pass");
-    } else if (text == "ladybug" || text == "mosquito" || text == "pillbug") {
+    } else if (text == "ladybug" ||
+               text == "mosquito" ||
+               text == "pillbug") {
         var letter = text.charAt(0);
         var value = State.Current.type.indexOf(letter) >= 0;
         var bug = letter.toUpperCase() + text.slice(1);
-        option.html("Use " + bug + ": " + boolean_text(value) +
-                    " &rarr; " + boolean_text(!value));
+        option.html(boolean_menu("Use " + bug, value));
     } else if (text == "next") {
-        option.html("Change whom to play next: " + State.Current.next +
-                    " &rarr; " + other_color(State.Current.next));
+        option.html(color_menu("Change whom to play next", State.Current.next));
     } else if (text == "ai") {
-        option.html("Change AI color: " + State.Current.ai +
-                    " &rarr; " + other_color(State.Current.ai));
+        option.html(color_menu("Change AI color", State.Current.ai));
     } else if (text == "label") {
-        var value = State.Current.label;
-        option.html("Change label: " + boolean_text(value) +
-                    " &rarr; " + boolean_text(!value));
+        option.html(boolean_menu("Change label", State.Current.label));
     } else if (text == "grid") {
-        var value = State.Current.grid;
-        option.html("Change grid: " + boolean_text(value) +
-                    " &rarr; " + boolean_text(!value));
+        option.html(boolean_menu("Change grid", State.Current.grid));
     } else if (text == "mode") {
         var value = State.Current.edit;
         option.html("Change mode: " + mode_text(value) +
@@ -110,23 +121,13 @@ function execute_menu (select) {
     var option = select.children("option[value=" + text + "]");
     if (State.Current.debug)
         console.log("menu", text);
-    if (text == "next") {
-        State.Current.next = other_color(State.Current.next);
-    } else if (text == "ai") {
-        State.Current.ai = other_color(State.Current.ai);
-    } else if (text == "mode") {
-        State.Current.edit = !State.Current.edit;
-        update_mode(select);
-    } else if (text == "center") {
+    if (text == "center") {
         if (State.Current.edit) {
             UI.Board.center();
             update_from_board();
         } else {
+            // FIXME: why only for center and not for flip or rotate?
             AI.center();
-        }
-    } else if (text == "pass") {
-        if (!State.Current.edit) {
-            AI.move("PASS", "");
         }
     } else if (text == "flip") {
         UI.Board.flip();
@@ -137,13 +138,22 @@ function execute_menu (select) {
     } else if (text == "rotater") {
         UI.Board.rotate("right");
         update_from_board();
+    } else if (text == "reload") {
+        window.location.href = State.url();
     } else if (text == "decsize") {
         State.Current.size = Math.round(State.Current.size * 0.9);
         window.location.href = State.url();
     } else if (text == "incsize") {
         State.Current.size = Math.round(State.Current.size * 1.1);
         window.location.href = State.url();
-    } else if (text == "ladybug" || text == "mosquito" || text == "pillbug") {
+    } else if (text == "pass") {
+        if (!State.Current.edit) {
+            // FIXME: should probably be AI.pass()
+            AI.move("PASS", "");
+        }
+    } else if (text == "ladybug" ||
+               text == "mosquito" ||
+               text == "pillbug") {
         var type = State.Current.type;
         var letter = text.charAt(0);
         var index = type.indexOf(letter);
@@ -152,8 +162,16 @@ function execute_menu (select) {
         } else {
             type = type.substr(0, index) + type.substr(index + 1);
         }
+        var re = new RegExp("[bw]" + letter.toUpperCase(), "g");
+        var str = " " + UI.Board.string(false) + " ";
+        str = str.replace(re, "").replace(/\s+[\+\-]\d+[\+\-]\d+/g, "");
+        State.Current.board = str.replace(/\s+/g, "");
         State.Current.type = type.split("").sort().join("");
         window.location.href = State.url();
+    } else if (text == "next") {
+        State.Current.next = other_color(State.Current.next);
+    } else if (text == "ai") {
+        State.Current.ai = other_color(State.Current.ai);
     } else if (text == "label") {
         State.Current.label = !State.Current.label;
         UI.Board.Config.Label = State.Current.label;
@@ -161,8 +179,9 @@ function execute_menu (select) {
     } else if (text == "grid") {
         State.Current.grid = !State.Current.grid;
         update_hexgrid();
-    } else if (text == "reload") {
-        window.location.href = State.url();
+    } else if (text == "mode") {
+        State.Current.edit = !State.Current.edit;
+        update_mode(select);
     }
     update_menu(option);
 }
